@@ -49,6 +49,45 @@
   --sidebar-ring: 21 84% 50%;
 }
 
+/* ── Dark mode ─────────────────────────────────────────────
+   Deep roast palette — the sidebar dark becomes the app dark.
+   Still warm (hue 22-33), never cold/blue-gray. ──────────── */
+.dark {
+  --background: 22 22% 10%;     /* #1C1610 — deep roast */
+  --foreground: 33 28% 88%;     /* #E8DFD0 — warm parchment text */
+  --card: 22 20% 13%;           /* #231A14 — slightly lifted surface */
+  --card-foreground: 33 28% 88%;
+  --popover: 22 20% 13%;
+  --popover-foreground: 33 28% 88%;
+  --primary: 21 80% 55%;        /* #E07035 — lighter/warmer for dark bg contrast */
+  --primary-foreground: 22 22% 10%;
+  --secondary: 22 18% 18%;      /* #2F251C — subtle lifted layer */
+  --secondary-foreground: 33 28% 88%;
+  --muted: 22 16% 16%;          /* #2A2018 */
+  --muted-foreground: 30 12% 58%; /* #9E9186 — warm muted text */
+  --accent: 21 80% 58%;         /* #E47A42 */
+  --accent-foreground: 22 22% 10%;
+  --destructive: 5 60% 55%;     /* #D9503A — slightly lighter for dark */
+  --destructive-foreground: 33 28% 88%;
+  --success: 95 25% 50%;        /* #7A9468 — lifted olive */
+  --success-foreground: 22 22% 10%;
+  --warning: 38 85% 58%;        /* #F0A030 — amber, readable on dark */
+  --warning-foreground: 22 22% 10%;
+  --border: 22 16% 22%;         /* #3A2E24 — subtle warm border */
+  --input: 22 16% 22%;
+  --ring: 21 80% 55%;
+
+  /* Sidebar stays consistent with light mode — it was already dark */
+  --sidebar: 22 22% 12%;        /* #1F1812 — slightly deeper than bg */
+  --sidebar-foreground: 33 30% 92%;
+  --sidebar-primary: 21 80% 55%;
+  --sidebar-primary-foreground: 22 22% 10%;
+  --sidebar-accent: 22 20% 18%;
+  --sidebar-accent-foreground: 33 30% 92%;
+  --sidebar-border: 22 16% 20%;
+  --sidebar-ring: 21 80% 58%;
+}
+
 @layer base {
   *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
