@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface Props {
   subscriptionId: string;
@@ -17,10 +18,10 @@ interface Props {
  */
 export function AdminQuickActions({ subscriptionId, restaurantId, currentStatus }: Props) {
   const [saving, setSaving] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const supabase = createClient();
 
-  const markPaid = async () => {
-    if (!confirm('تأكيد تسديد الاشتراك وتمديده شهراً؟')) return;
+  const handleConfirm = async () => {
     setSaving(true);
     try {
       // Get current end date
@@ -48,41 +49,59 @@ export function AdminQuickActions({ subscriptionId, restaurantId, currentStatus 
         })
         .eq('id', subscriptionId);
 
-      if (!error) {
+      if (error) {
+        console.error('[AdminQuickActions] markPaid subscription update error:', error);
+        toast.error('خطأ في تحديث الاشتراك');
+      } else {
         // Also update restaurant subscription_status
-        await supabase
+        const { error: restaurantError } = await supabase
           .from('restaurants')
           .update({ subscription_status: 'active' })
           .eq('id', restaurantId);
 
+        if (restaurantError) {
+          console.error('[AdminQuickActions] markPaid restaurant update error:', restaurantError);
+        }
+
         toast.success('✅ تم تسديد الاشتراك وتمديده لشهر');
-        // Refresh the page to reflect changes
         window.location.reload();
-      } else {
-        toast.error('خطأ في تحديث الاشتراك');
       }
     } catch (err) {
-
+      console.error('[AdminQuickActions] markPaid unexpected error:', err);
       toast.error('حدث خطأ غير متوقع');
+    } finally {
+      setSaving(false);
+      setDialogOpen(false);
     }
-    setSaving(false);
   };
 
   // Only show for non-active subscriptions (expired, past_due, cancelled)
   if (currentStatus === 'active' || currentStatus === 'free') return null;
 
   return (
-    <button
-      onClick={markPaid}
-      disabled={saving}
-      className="inline-flex items-center gap-1 text-xs font-semibold
-                 bg-success/10 border border-success/30 text-success
-                 hover:bg-success/20 hover:text-success
-                 px-2.5 py-1.5 rounded-lg transition-all touch-manipulation
-                 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <CheckCircle size={12} />
-      {saving ? '...' : 'تسديد + شهر'}
-    </button>
+    <>
+      <button
+        onClick={() => setDialogOpen(true)}
+        disabled={saving}
+        className="inline-flex items-center gap-1 text-xs font-semibold
+                   bg-success/10 border border-success/30 text-success
+                   hover:bg-success/20 hover:text-success
+                   px-2.5 py-1.5 rounded-lg transition-all touch-manipulation
+                   disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <CheckCircle size={12} />
+        {saving ? '...' : 'تسديد + شهر'}
+      </button>
+
+      <ConfirmDialog
+        open={dialogOpen}
+        onOpenChange={(o) => { if (!saving) setDialogOpen(o); }}
+        title="تأكيد تسديد الاشتراك"
+        description="سيتم تمديد الاشتراك شهراً كاملاً من تاريخ انتهائه الحالي وتفعيله فوراً."
+        confirmLabel="تسديد + تمديد شهر"
+        loading={saving}
+        onConfirm={handleConfirm}
+      />
+    </>
   );
 }
