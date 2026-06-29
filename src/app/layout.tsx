@@ -1,0 +1,68 @@
+import type { Metadata, Viewport } from 'next';
+import { Cairo, JetBrains_Mono } from 'next/font/google';
+import './globals.css';
+import { Toaster } from '@/components/shared/Toaster';
+import { ServiceWorkerRegister } from '@/components/shared/ServiceWorkerRegister';
+import QueryProvider from '@/components/shared/QueryProvider';
+
+const cairo = Cairo({
+  subsets: ['arabic'],
+  variable: '--font-cairo',
+  weight: ['400', '500', '600', '700', '800', '900'],
+});
+
+// Used for order numbers, prices, and table numbers — the "printed receipt"
+// numeral personality that ties back to the physical cashier ticket.
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['500', '700'],
+});
+
+export const metadata: Metadata = {
+  title: 'دكان — نظام طلبات QR للمطاعم في البحرين',
+  description: 'دع العملاء يمسحون رمز QR ويطلبون من هواتفهم. الدفع عند الكاشير.',
+  keywords: 'QR menu Bahrain, restaurant ordering system Bahrain, قائمة QR البحرين',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'دكان',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#C2540C',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
+      <body className={`${cairo.variable} ${mono.variable} antialiased`}>
+        <QueryProvider>
+          <ServiceWorkerRegister />
+          {children}
+          <Toaster />
+        </QueryProvider>
+      </body>
+    </html>
+  );
+}

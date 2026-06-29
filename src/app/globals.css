@@ -1,0 +1,283 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-cairo: 'Cairo', system-ui, sans-serif;
+  /* Safe area for iOS notch/home-bar */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+
+  /* ── Dokan theme: warm, receipt-inspired ───────────────
+     Background reads like cashier paper; primary is a true
+     spice/saffron tone rather than corporate amber. ──────── */
+  --background: 33 38% 95%;     /* #F8F2E8 — warm paper */
+  --foreground: 22 28% 14%;     /* #2B2118 — warm ink, not pure black */
+  --card: 36 45% 99%;           /* #FEFCF9 — slightly warmer than white */
+  --card-foreground: 22 28% 14%;
+  --popover: 36 45% 99%;
+  --popover-foreground: 22 28% 14%;
+  --primary: 21 84% 38%;        /* #C2540C — spice/saffron, not corporate amber */
+  --primary-foreground: 36 45% 99%;
+  --secondary: 33 30% 90%;      /* #EDE4D3 */
+  --secondary-foreground: 22 28% 14%;
+  --muted: 33 28% 91%;          /* #EFE7D9 */
+  --muted-foreground: 25 15% 40%; /* #6B5D4F — warm gray, not cold gray */
+  --accent: 21 84% 45%;         /* #DC6315 */
+  --accent-foreground: 36 45% 99%;
+  --destructive: 5 65% 48%;
+  --destructive-foreground: 36 45% 99%;
+  --success: 95 28% 38%;        /* #5B6F4F — olive green, not generic emerald */
+  --success-foreground: 36 45% 99%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 22 28% 14%;
+  --border: 30 20% 85%;         /* #E2D8C8 */
+  --input: 30 20% 85%;
+  --ring: 21 84% 45%;
+
+  /* Sidebar */
+  --sidebar: 22 25% 16%;        /* #2E251D — dark roast, not neutral gray */
+  --sidebar-foreground: 33 30% 92%;
+  --sidebar-primary: 21 84% 45%;
+  --sidebar-primary-foreground: 36 45% 99%;
+  --sidebar-accent: 22 22% 22%;
+  --sidebar-accent-foreground: 33 30% 92%;
+  --sidebar-border: 22 20% 24%;
+  --sidebar-ring: 21 84% 50%;
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-inter);
+    overscroll-behavior: none;
+  }
+
+  [dir="rtl"], [lang="ar"] body, [dir="rtl"] body {
+    font-family: var(--font-cairo), system-ui, sans-serif;
+  }
+
+  /* Prevent zoom on input focus (iOS) — min font-size 16px */
+  input, select, textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: hsl(var(--muted)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+
+/* ── Components (Sari3-style) ──────────────────────────── */
+@layer components {
+
+  /* Buttons — pill-shaped, per Sari3 */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-primary text-primary-foreground font-bold
+           min-h-[44px] px-5 py-2.5 rounded-full
+           transition-all duration-150
+           active:scale-[0.97]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           select-none touch-manipulation;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2
+           bg-secondary text-secondary-foreground font-semibold
+           border border-border
+           min-h-[44px] px-5 py-2.5 rounded-full
+           transition-all duration-150
+           active:scale-[0.97]
+           disabled:opacity-50 disabled:cursor-not-allowed
+           select-none touch-manipulation;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           hover:bg-muted active:bg-accent/10
+           text-muted-foreground hover:text-foreground
+           min-h-[44px] min-w-[44px] px-3 py-2 rounded-full
+           transition-all duration-150
+           select-none touch-manipulation;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           bg-destructive/10 hover:bg-destructive/20 active:bg-destructive/30
+           text-destructive font-semibold
+           border border-destructive/30
+           min-h-[44px] px-4 py-2 rounded-full
+           transition-all duration-150
+           select-none touch-manipulation;
+  }
+
+  /* Cards — rounded-2xl, with shadow-card */
+  .card { @apply bg-card border border-border rounded-2xl p-4 shadow-card; }
+  .card-hover {
+    @apply card hover:border-primary/40 active:border-primary/40 active:bg-accent/5
+           transition-all duration-150 cursor-pointer select-none touch-manipulation;
+  }
+
+  /* Inputs — 44px min height, 16px font (no iOS zoom), rounded-xl */
+  .input {
+    @apply w-full bg-background border border-input
+           text-foreground placeholder:text-muted-foreground
+           rounded-xl px-4
+           min-h-[44px] py-3
+           text-base
+           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary
+           transition-colors duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .label { @apply block text-sm font-semibold text-muted-foreground mb-1.5; }
+
+  /* Status badges — pill-shaped, warmed to match the new palette */
+  .badge { @apply inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full; }
+  .badge-pending   { @apply bg-[#F6E8D3] text-[#7A5210] border border-[#E4A05C]; }
+  .badge-confirmed { @apply bg-[#DCE6E0] text-[#33493D] border border-[#9FBBA9]; }
+  .badge-preparing { @apply bg-[#F6DFC4] text-[#7E3409] border border-[#E4A05C]; }
+  .badge-ready     { @apply bg-[#E3EBD9] text-[#3D5230] border border-[#9FC086]; }
+  .badge-delivered { @apply bg-[#E6E1F0] text-[#3D3260] border border-[#B3A4D6]; }
+  .badge-cancelled { @apply bg-[#F3DCDA] text-[#7A2A24] border border-[#D99891]; }
+
+  /* Sidebar nav links */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 min-h-[44px] rounded-xl
+           text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent
+           active:bg-sidebar-accent/80
+           transition-all duration-150 text-sm font-semibold
+           select-none touch-manipulation;
+  }
+  .sidebar-link-active {
+    @apply sidebar-link bg-sidebar-accent text-sidebar-foreground;
+  }
+
+  /* Kitchen card */
+  .kitchen-card { @apply bg-card border-2 rounded-2xl p-4 shadow-card transition-all duration-300; }
+  .kitchen-card-pending   { @apply border-muted-foreground/20; }
+  .kitchen-card-confirmed { @apply border-[#9FBBA9]; }
+  .kitchen-card-preparing { @apply border-[#E4A05C] bg-[#FBF1E7]/60; }
+  .kitchen-card-ready     { @apply border-[#9FC086] bg-[#E3EBD9]/40; }
+
+  .divider      { @apply border-t border-border; }
+  .section-title { @apply block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3; }
+
+  .stat-card    { @apply card flex flex-col gap-1; }
+  .stat-value   { @apply text-2xl font-black text-foreground; }
+  .stat-label   { @apply text-sm text-muted-foreground; }
+
+  /* Brand gradient icon box */
+  .brand-icon {
+    @apply grid size-10 shrink-0 place-items-center rounded-xl
+           bg-gradient-brand text-white font-black;
+  }
+
+  /* ── Signature element: the torn-ticket notch ──────────────
+     A row of half-circle notches along one edge, like a perforated
+     order ticket torn from a pad. Used on hero panels, receipt-style
+     summaries, and the kitchen ticket card to tie back to the
+     physical artifact this product replaces.
+     The cutout color defaults to --background; pass --ticket-backing
+     inline when the parent sits on a different surface (e.g. the
+     dark sidebar panel in the hero). ──────────────────────────── */
+  .ticket-edge {
+    position: relative;
+    --ticket-backing-color: var(--ticket-backing, hsl(var(--background)));
+  }
+  .ticket-edge::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: -1px;
+    height: 14px;
+    background-image: radial-gradient(circle at 10px 0, transparent 9px, var(--ticket-backing-color) 9.5px);
+    background-size: 20px 14px;
+    background-repeat: repeat-x;
+  }
+
+  /* Order-number / price numerals: monospace, like a printed receipt */
+  .ticket-number {
+    @apply font-mono font-bold tabular-nums tracking-tight;
+  }
+
+  /* Empty state */
+  .empty-state {
+    @apply rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground;
+  }
+
+  /* Badge highlight (for car orders, etc.) */
+  .badge-highlight {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold;
+  }
+}
+
+/* ── RTL ───────────────────────────────────────────────── */
+[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+
+/* ── Animations ────────────────────────────────────────── */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-slide-up   { animation: slideUp 0.25s ease-out forwards; }
+.animate-fade-in    { animation: fadeIn  0.2s  ease-out forwards; }
+.animate-pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
+
+/* ── iOS keyboard fix ──────────────────────────────────── */
+.keyboard-aware { height: 100dvh; }
+
+/* ── Safe area padding ─────────────────────────────────── */
+.safe-top    { padding-top:    max(env(safe-area-inset-top,    0px), 12px); }
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); }
+.safe-x      { padding-left:   env(safe-area-inset-left,  0px);
+               padding-right:  env(safe-area-inset-right, 0px); }
+
+/* ── Bottom sheet ─────────────────────────────────────── */
+.bottom-sheet { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); }
+
+/* ── Customer menu: category scroll hide scrollbar ─────── */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── Admin tables ─────────────────────────────────────── */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── QR print ──────────────────────────────────────────── */
+@media print {
+  body { background: white !important; color: black !important; }
+  .no-print { display: none !important; }
+  .qr-print-card {
+    page-break-inside: avoid;
+    border: 2px solid black;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+}
+
+/* ── Focus visible ────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
