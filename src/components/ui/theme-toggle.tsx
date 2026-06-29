@@ -9,22 +9,22 @@ type Theme = 'dark' | 'light';
 const STORAGE_KEY = 'dokan-theme';
 
 /**
- * Theme toggle button.
- *
- * Persists to localStorage under `dokan-theme`.
- * Default is `dark`.
- *
- * When toggled, it adds/removes the `.dark` class on `<html>` and
- * stores the preference so it survives page reloads.
+ * Theme toggle — persists to localStorage under `dokan-theme`.
+ * Default follows the OS/browser prefers-color-scheme setting.
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
-  // Hydrate from localStorage on mount (avoids SSR mismatch)
   useEffect(() => {
+    // 1. Respect stored preference, then fall back to system preference
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const initial = stored === 'light' || stored === 'dark' ? stored : 'dark';
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initial: Theme =
+      stored === 'light' || stored === 'dark'
+        ? stored
+        : systemDark ? 'dark' : 'light';
+
     setTheme(initial);
     document.documentElement.classList.toggle('dark', initial === 'dark');
     setMounted(true);
@@ -37,13 +37,13 @@ export function ThemeToggle() {
     document.documentElement.classList.toggle('dark', next === 'dark');
   };
 
-  // Prevent hydration flash — render nothing until mounted
+  // Prevent hydration flash — invisible placeholder until mounted
   if (!mounted) {
     return (
       <button
         type="button"
         aria-label="تبديل الثيم"
-        className="w-9 h-9 rounded-full border border-[#2a2825] bg-[#1a1916]"
+        className="w-9 h-9 rounded-full border border-sidebar-border bg-sidebar-accent"
         tabIndex={-1}
         style={{ visibility: 'hidden' }}
       />
@@ -60,8 +60,8 @@ export function ThemeToggle() {
         'flex items-center justify-center',
         'active:scale-95 select-none touch-manipulation',
         theme === 'dark'
-          ? 'border-[#2a2825] bg-[#1a1916] text-[#f59e0b] hover:bg-[#2a2825]'
-          : 'border-[#e5e7eb] bg-white text-[#d97706] hover:bg-[#f3f4f6]',
+          ? 'border-sidebar-border bg-sidebar-accent text-warning hover:bg-sidebar-accent/80'
+          : 'border-border bg-secondary text-warning hover:bg-muted',
       )}
     >
       {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
