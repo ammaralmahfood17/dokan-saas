@@ -78,7 +78,7 @@ export function OpeningHoursEditor({ value, onChange }: Props) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 mb-3">
-        <Clock size={16} className="text-primary" />
+        <Clock size={16} className="text-brand-400" />
         <span className="text-sm font-medium text-foreground">
           ساعات العمل
         </span>
@@ -134,7 +134,7 @@ export function OpeningHoursEditor({ value, onChange }: Props) {
                     type="button"
                     onClick={() => copyFromPrev(day.key)}
                     className="w-9 h-9 flex-shrink-0 flex items-center justify-center
-                               text-muted-foreground active:text-foreground active:bg-secondary
+                               text-muted-foreground active:text-muted-foreground active:bg-secondary
                                rounded-lg touch-manipulation"
                     title="نسخ من اليوم السابق"
                   >
@@ -189,13 +189,13 @@ export function OpeningHoursDisplay({
               <div key={day.key}
                 className={cn(
                   'flex items-center justify-between',
-                  isToday && 'text-primary font-medium'
+                  isToday && 'text-brand-400 font-medium'
                 )}
               >
-                <span className={isToday ? 'text-primary' : 'text-muted-foreground'}>
+                <span className={isToday ? 'text-brand-400' : 'text-muted-foreground'}>
                   {day.ar}
                 </span>
-                <span className={dh?.closed ? 'text-destructive' : (isToday ? 'text-primary' : 'text-muted-foreground')}>
+                <span className={dh?.closed ? 'text-destructive' : (isToday ? 'text-brand-400' : 'text-muted-foreground')}>
                   {getOpeningHoursText(hours, day.key)}
                 </span>
               </div>

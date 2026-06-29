@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { CheckCircle } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface Props {
   subscriptionId: string;
@@ -18,10 +18,10 @@ interface Props {
  */
 export function AdminQuickActions({ subscriptionId, restaurantId, currentStatus }: Props) {
   const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const supabase = createClient();
 
-  const handleConfirm = async () => {
+  const markPaid = async () => {
     setSaving(true);
     try {
       // Get current end date
@@ -49,30 +49,26 @@ export function AdminQuickActions({ subscriptionId, restaurantId, currentStatus 
         })
         .eq('id', subscriptionId);
 
-      if (error) {
-        console.error('[AdminQuickActions] markPaid subscription update error:', error);
-        toast.error('خطأ في تحديث الاشتراك');
-      } else {
+      if (!error) {
         // Also update restaurant subscription_status
-        const { error: restaurantError } = await supabase
+        await supabase
           .from('restaurants')
           .update({ subscription_status: 'active' })
           .eq('id', restaurantId);
 
-        if (restaurantError) {
-          console.error('[AdminQuickActions] markPaid restaurant update error:', restaurantError);
-        }
-
         toast.success('✅ تم تسديد الاشتراك وتمديده لشهر');
+        // Refresh the page to reflect changes
         window.location.reload();
+      } else {
+        console.error('[AdminQuickActions] subscription update failed:', error);
+        toast.error('خطأ في تحديث الاشتراك');
       }
     } catch (err) {
-      console.error('[AdminQuickActions] markPaid unexpected error:', err);
+      console.error('[AdminQuickActions] unexpected error:', err);
       toast.error('حدث خطأ غير متوقع');
-    } finally {
-      setSaving(false);
-      setDialogOpen(false);
     }
+    setSaving(false);
+    setConfirmOpen(false);
   };
 
   // Only show for non-active subscriptions (expired, past_due, cancelled)
@@ -81,7 +77,7 @@ export function AdminQuickActions({ subscriptionId, restaurantId, currentStatus 
   return (
     <>
       <button
-        onClick={() => setDialogOpen(true)}
+        onClick={() => setConfirmOpen(true)}
         disabled={saving}
         className="inline-flex items-center gap-1 text-xs font-semibold
                    bg-success/10 border border-success/30 text-success
@@ -92,15 +88,14 @@ export function AdminQuickActions({ subscriptionId, restaurantId, currentStatus 
         <CheckCircle size={12} />
         {saving ? '...' : 'تسديد + شهر'}
       </button>
-
       <ConfirmDialog
-        open={dialogOpen}
-        onOpenChange={(o) => { if (!saving) setDialogOpen(o); }}
-        title="تأكيد تسديد الاشتراك"
-        description="سيتم تمديد الاشتراك شهراً كاملاً من تاريخ انتهائه الحالي وتفعيله فوراً."
-        confirmLabel="تسديد + تمديد شهر"
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="تأكيد تسديد الاشتراك؟"
+        description="سيتم تمديد الاشتراك لمدة شهر إضافي من تاريخ الانتهاء الحالي."
+        confirmText="تسديد"
         loading={saving}
-        onConfirm={handleConfirm}
+        onConfirm={markPaid}
       />
     </>
   );

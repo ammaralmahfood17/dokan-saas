@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import { createClient } from '@/lib/supabase/client';
 import type { Table } from '@/types';
 import { cn } from '@/lib/utils';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 
 function QRModal({
@@ -123,6 +124,8 @@ export default function TablesPage() {
   const [loading, setLoading] = useState(true);
   const [qrTable, setQrTable] = useState<Table | null>(null);
   const [adding, setAdding] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Table | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -173,9 +176,14 @@ export default function TablesPage() {
     load();
   };
 
-  const deleteTable = async (id: string) => {
-    if (!confirm('حذف الطاولة؟')) return;
-    await supabase.from('tables').delete().eq('id', id);
+  const deleteTable = (table: Table) => setDeleteTarget(table);
+
+  const confirmDeleteTable = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await supabase.from('tables').delete().eq('id', deleteTarget.id);
+    setDeleting(false);
+    setDeleteTarget(null);
     toast.success('تم الحذف');
     load();
   };
@@ -314,7 +322,7 @@ export default function TablesPage() {
                   }
                 </button>
                 <button
-                  onClick={() => deleteTable(table.id)}
+                  onClick={() => deleteTable(table)}
                   className="btn-ghost py-1.5 px-2 text-destructive hover:text-destructive"
                 >
                   <Trash2 size={16} />
@@ -333,6 +341,17 @@ export default function TablesPage() {
           onClose={() => setQrTable(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="حذف الطاولة؟"
+        description={deleteTarget ? `سيتم حذف "${deleteTarget.name_ar}" نهائياً.` : undefined}
+        confirmText="حذف"
+        variant="destructive"
+        loading={deleting}
+        onConfirm={confirmDeleteTable}
+      />
     </div>
   );
 }

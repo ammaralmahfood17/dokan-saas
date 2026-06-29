@@ -11,6 +11,7 @@ import { formatBHD, formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { OrderWithItems, OrderStatus } from '@/types';
 import { ORDER_STATUS_CONFIG } from '@/types/constants';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 
 // Full status flow: pending → confirmed → preparing → ready → completed
@@ -52,6 +53,7 @@ function OrderCard({
   onUpdateStatus: (id: string, status: OrderStatus) => Promise<void>;
 }) {
   const [updating, setUpdating] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const nextStatus = NEXT_STATUS[order.status];
   const nextLabel = NEXT_STATUS_LABEL[order.status];
   const config = ORDER_STATUS_CONFIG[order.status] ?? ORDER_STATUS_CONFIG.pending;
@@ -63,11 +65,13 @@ function OrderCard({
     setUpdating(false);
   };
 
-  const handleCancel = async () => {
-    if (!confirm('تأكيد إلغاء الطلب؟')) return;
+  const handleCancel = () => setCancelOpen(true);
+
+  const confirmCancel = async () => {
     setUpdating(true);
     await onUpdateStatus(order.id, 'cancelled');
     setUpdating(false);
+    setCancelOpen(false);
   };
 
   const isNew = Date.now() - new Date(order.created_at).getTime() < 60000;
@@ -171,6 +175,17 @@ function OrderCard({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={cancelOpen}
+        onOpenChange={setCancelOpen}
+        title="تأكيد إلغاء الطلب؟"
+        description="لا يمكن التراجع عن هذا الإجراء."
+        confirmText="إلغاء الطلب"
+        variant="destructive"
+        loading={updating}
+        onConfirm={confirmCancel}
+      />
     </div>
   );
 }

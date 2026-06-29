@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import type { Review } from '@/types';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from 'sonner';
 
 // ── Star rating picker ─────────────────────────────────────
@@ -116,7 +117,7 @@ export function ReviewForm({
       </div>
 
       {rating > 0 && (
-        <div className="text-center text-sm text-primary font-medium">
+        <div className="text-center text-sm text-brand-400 font-medium">
           {rating === 5 ? 'ممتاز! 🎉' :
            rating === 4 ? 'جيد جداً 👍' :
            rating === 3 ? 'مقبول 👌' :
@@ -172,6 +173,8 @@ export function ReviewsList({
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState({ avg: 0, total: 0 });
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -299,9 +302,14 @@ export function ReviewsDashboard({
     load();
   };
 
-  const deleteReview = async (id: string) => {
-    if (!confirm('حذف التقييم؟')) return;
-    await supabase.from('reviews').delete().eq('id', id);
+  const deleteReview = (id: string) => setDeleteId(id);
+
+  const confirmDeleteReview = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    await supabase.from('reviews').delete().eq('id', deleteId);
+    setDeleting(false);
+    setDeleteId(null);
     load();
   };
 
@@ -375,15 +383,15 @@ export function ReviewsDashboard({
               <div className="flex gap-1 flex-shrink-0">
                 <button
                   onClick={() => togglePublic(review.id, review.is_public ?? false)}
-                  className="text-xs text-muted-foreground hover:text-foreground px-2 py-1
+                  className="text-xs text-muted-foreground hover:text-muted-foreground px-2 py-1
                              bg-background border border-border rounded-lg transition-colors"
                 >
                   {review.is_public ? 'إخفاء' : 'إظهار'}
                 </button>
                 <button
                   onClick={() => deleteReview(review.id)}
-                  className="text-xs text-destructive hover:text-destructive/80 px-2 py-1
-                             bg-destructive/10 border border-destructive/30 rounded-lg transition-colors"
+                  className="text-xs text-destructive hover:text-destructive px-2 py-1
+                             bg-destructive/10/30 border border-destructive/30/30 rounded-lg transition-colors"
                 >
                   حذف
                 </button>
@@ -392,6 +400,17 @@ export function ReviewsDashboard({
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
+        title="حذف التقييم؟"
+        description="لا يمكن التراجع عن هذا الإجراء."
+        confirmText="حذف"
+        variant="destructive"
+        loading={deleting}
+        onConfirm={confirmDeleteReview}
+      />
     </div>
   );
 }

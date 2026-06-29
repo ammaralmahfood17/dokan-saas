@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, Plus, Store } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { Restaurant } from '@/types';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -16,7 +16,6 @@ export function RestaurantSwitcher({ currentRestaurantId, locale }: Props) {
   const isAr = locale === 'ar';
   const supabase = createClient();
   const router = useRouter();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [current, setCurrent] = useState<Restaurant | null>(null);
@@ -67,7 +66,7 @@ export function RestaurantSwitcher({ currentRestaurantId, locale }: Props) {
                    bg-background border border-border hover:border-muted-foreground/30
                    transition-all text-sm"
       >
-        <Store size={14} className="text-primary flex-shrink-0" />
+        <Store size={14} className="text-brand-400 flex-shrink-0" />
         <span className="flex-1 text-start text-foreground truncate">
           {current ? (isAr ? current.name_ar : current.name_en) : '...'}
         </span>
@@ -86,15 +85,14 @@ export function RestaurantSwitcher({ currentRestaurantId, locale }: Props) {
               key={r.id}
               onClick={() => {
                 setOpen(false);
-                // Navigate with switch param — server middleware picks up the new restaurant
-                const url = new URL(pathname, window.location.origin);
-                url.searchParams.set('switch', r.id);
-                router.push(url.pathname + url.search);
+                // Store preference in localStorage
+                localStorage.setItem('dokan_active_restaurant', r.id);
+                router.refresh();
               }}
               className={cn(
                 'w-full flex items-center gap-2 px-3 py-2.5 text-sm text-start',
-                'hover:bg-muted transition-colors',
-                r.id === currentRestaurantId && 'bg-primary/10 text-primary'
+                'hover:bg-secondary transition-colors',
+                r.id === currentRestaurantId && 'bg-brand-500/10 text-brand-400'
               )}
             >
               <div className="flex-1 min-w-0">
@@ -107,7 +105,7 @@ export function RestaurantSwitcher({ currentRestaurantId, locale }: Props) {
                 </div>
               </div>
               {r.id === currentRestaurantId && (
-                <span className="text-xs text-primary">✓</span>
+                <span className="text-xs text-brand-400">✓</span>
               )}
             </button>
           ))}
@@ -119,7 +117,7 @@ export function RestaurantSwitcher({ currentRestaurantId, locale }: Props) {
                 router.push(`/${locale}/dashboard/settings?new=1`);
               }}
               className="w-full flex items-center gap-2 px-3 py-2.5 text-sm
-                         text-primary hover:bg-muted transition-colors"
+                         text-brand-400 hover:bg-secondary transition-colors"
             >
               <Plus size={14} />
               {isAr ? 'إضافة مطعم جديد' : 'Add new restaurant'}

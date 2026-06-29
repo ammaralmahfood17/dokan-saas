@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Package } from 'lucide-react';
+import { Package, AlertCircle, RotateCcw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Item } from '@/types';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 interface Props {
   item: Item & { stock_enabled?: boolean; stock_count?: number | null; sold_out?: boolean };
@@ -93,48 +93,39 @@ export function KitchenStockToggle({
 }) {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!itemId) return null;
 
-  const handleConfirm = async () => {
+  const markSoldOut = async () => {
     setLoading(true);
-    const { error } = await supabase
+    await supabase
       .from('items')
       .update({ sold_out: true, is_available: false })
       .eq('id', itemId);
-
     setLoading(false);
-    setDialogOpen(false);
-
-    if (error) {
-      console.error('[KitchenStockToggle] markSoldOut error:', error);
-      toast.error('حدث خطأ أثناء تحديث المخزون');
-    } else {
-      toast.success('تم تحديد العنصر كنافذ المخزون');
-    }
+    setConfirmOpen(false);
+    toast.success('تم تحديد العنصر كنافذ المخزون');
   };
 
   return (
     <>
       <button
-        onClick={() => setDialogOpen(true)}
+        onClick={() => setConfirmOpen(true)}
         disabled={loading}
-        className="text-xs text-destructive hover:text-destructive bg-destructive/10
-                   hover:bg-destructive/20 px-2 py-1 rounded-lg transition-all
-                   touch-manipulation disabled:opacity-50"
+        className="text-xs text-destructive hover:text-destructive bg-destructive/10 hover:bg-destructive/20
+                   px-2 py-1 rounded-lg transition-all touch-manipulation"
       >
         {loading ? '...' : 'نفذ المخزون'}
       </button>
-
       <ConfirmDialog
-        open={dialogOpen}
-        onOpenChange={(o) => { if (!loading) setDialogOpen(o); }}
-        title="تأكيد نفاذ المخزون"
-        description={`هل تريد تحديد "${itemNameAr}" كنافذ المخزون؟ سيتوقف ظهوره للعملاء.`}
-        confirmLabel="نعم، نفذ المخزون"
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={`تحديد "${itemNameAr}" كنافذ المخزون؟`}
+        confirmText="تأكيد"
+        variant="destructive"
         loading={loading}
-        onConfirm={handleConfirm}
+        onConfirm={markSoldOut}
       />
     </>
   );

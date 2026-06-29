@@ -12,6 +12,7 @@ import type { Category, Item, Variation, Addon } from '@/types';
 import { toast } from 'sonner';
 import NextImage from 'next/image';
 import { StockControl } from '@/components/dashboard/StockControl';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // ── Item Form Modal ────────────────────────────────────────
 function ItemModal({
@@ -478,6 +479,10 @@ export default function MenuPage() {
   const [editItem, setEditItem] = useState<Item | null | 'new'>(null);
   const [activeCatId, setActiveCatId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<
+    { kind: 'category'; category: Category } | { kind: 'item'; item: Item } | null
+  >(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -516,21 +521,25 @@ export default function MenuPage() {
     if (!error) { toast.success('تم إضافة الصنف'); load(); }
   };
 
-  const deleteCategory = async (id: string) => {
-    if (!confirm('حذف الصنف وجميع عناصره؟')) return;
-    await supabase.from('categories').delete().eq('id', id);
-    toast.success('تم الحذف');
-    load();
-  };
+  const deleteCategory = (category: Category) => setDeleteTarget({ kind: 'category', category });
 
   const toggleItemAvailability = async (item: Item) => {
     await supabase.from('items').update({ is_available: !item.is_available }).eq('id', item.id);
     load();
   };
 
-  const deleteItem = async (id: string) => {
-    if (!confirm('حذف العنصر؟')) return;
-    await supabase.from('items').delete().eq('id', id);
+  const deleteItem = (item: Item) => setDeleteTarget({ kind: 'item', item });
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    if (deleteTarget.kind === 'category') {
+      await supabase.from('categories').delete().eq('id', deleteTarget.category.id);
+    } else {
+      await supabase.from('items').delete().eq('id', deleteTarget.item.id);
+    }
+    setDeleting(false);
+    setDeleteTarget(null);
     toast.success('تم الحذف');
     load();
   };
@@ -608,7 +617,7 @@ export default function MenuPage() {
                       <span className="hidden sm:inline">عنصر</span>
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); deleteCategory(cat.id); }}
+                      onClick={(e) => { e.stopPropagation(); deleteCategory(cat); }}
                       className="w-10 h-10 flex items-center justify-center text-destructive
                                  active:text-destructive active:bg-destructive/10 rounded-lg
                                  touch-manipulation transition-colors"
@@ -698,7 +707,7 @@ export default function MenuPage() {
                                 {item.is_available ? <Eye size={16} /> : <EyeOff size={16} />}
                               </button>
                               <button
-                                onClick={() => deleteItem(item.id)}
+                                onClick={() => deleteItem(item)}
                                 className="w-11 h-11 flex items-center justify-center text-destructive
                                            active:text-destructive active:bg-destructive/10 rounded-lg
                                            touch-manipulation transition-colors"
@@ -728,6 +737,23 @@ export default function MenuPage() {
           onSaved={load}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title={deleteTarget?.kind === 'category' ? 'حذف الصنف؟' : 'حذف العنصر؟'}
+        description={
+          deleteTarget?.kind === 'category'
+            ? `سيتم حذف "${deleteTarget.category.name_ar}" وجميع عناصره نهائياً.`
+            : deleteTarget?.kind === 'item'
+              ? `سيتم حذف "${deleteTarget.item.name_ar}" نهائياً.`
+              : undefined
+        }
+        confirmText="حذف"
+        variant="destructive"
+        loading={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

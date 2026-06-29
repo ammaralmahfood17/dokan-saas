@@ -4,22 +4,17 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { OrderWithItems, OrderStatus } from '@/types';
 
-// Statuses that are no longer "active" — remove from kitchen / orders view
-const TERMINAL_STATUSES: OrderStatus[] = ['completed', 'cancelled'];
-
 export function useRealtimeOrders(restaurantId: string) {
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
   const fetchOrders = useCallback(async () => {
-    if (!restaurantId) return;
-    // PostgREST `not … in` filter expects the format: (val1,val2)
     const { data, error } = await supabase
       .from('orders')
       .select(`*, table:tables(*), order_items(*)`)
       .eq('restaurant_id', restaurantId)
-      .not('status', 'in', '(completed,cancelled)')
+      .not('status', 'in', '("completed","cancelled")')
       .order('created_at', { ascending: true });
 
     if (!error && data) setOrders(data as OrderWithItems[]);
@@ -43,23 +38,11 @@ export function useRealtimeOrders(restaurantId: string) {
             .eq('id', payload.new.id)
             .single();
           if (data) setOrders((prev) => [...prev, data as OrderWithItems]);
-
         } else if (payload.eventType === 'UPDATE') {
           const updated = payload.new as OrderWithItems;
-
-          // Bug fix: remove the order from local state when it reaches a
-          // terminal status (completed / cancelled) so it disappears from
-          // the kitchen kanban and orders list immediately.
-          if (TERMINAL_STATUSES.includes(updated.status as OrderStatus)) {
-            setOrders((prev) => prev.filter((o) => o.id !== updated.id));
-          } else {
-            setOrders((prev) =>
-              prev.map((o) => o.id === updated.id ? { ...o, ...updated } : o)
-            );
-          }
-
-        } else if (payload.eventType === 'DELETE') {
-          setOrders((prev) => prev.filter((o) => o.id !== payload.old.id));
+          setOrders((prev) => 
+            prev.map((o) => o.id === updated.id ? { ...o, ...updated } : o)
+          );
         }
       })
       .subscribe();
@@ -74,14 +57,11 @@ export function useRealtimeOrders(restaurantId: string) {
       .update({ status })
       .eq('id', orderId);
 
-    if (!error) {
-      // Optimistically remove terminal orders from local state right away
-      // (the realtime UPDATE event will confirm this, but this makes the UI
-      // feel instant on slow connections).
-      if (TERMINAL_STATUSES.includes(status)) {
-        setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      }
+    if (error) {
+      // console.error('SOPRANO_AUDIT_ERROR:', error);
+    }
 
+    if (!error) {
       // Fire push notification async (non-blocking)
       fetch('/api/push', {
         method: 'POST',
