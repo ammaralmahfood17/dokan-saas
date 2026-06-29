@@ -34,6 +34,13 @@ const STATUS_LABEL: Record<string, string> = {
   preparing: 'يُجهز',
 };
 
+// Bug fix: was missing 'confirmed' — column header was blank
+const COL_LABEL: Record<string, string> = {
+  pending:   '⏳ جديد',
+  confirmed: '✓ مؤكد',
+  preparing: '🔥 يُجهز',
+};
+
 function KitchenCard({
   order,
   onAdvance,
@@ -144,7 +151,7 @@ function KitchenCard({
               )}
               {item.addons?.length > 0 && (
                 <div className="text-xs text-muted-foreground">
-                  + {item.addons.map(a => a.name_ar).join(', ')}
+                  + {item.addons.map((a: { name_ar: string }) => a.name_ar).join(', ')}
                 </div>
               )}
               {item.notes && (
@@ -238,11 +245,7 @@ export default function KitchenPage() {
     for (const o of orders) {
       if (!seenIds.current.has(o.id)) {
         seenIds.current.add(o.id);
-        // Play sound sequence: 3 rising pings + vibrate
-        if (soundOn) {
-          playOrderAlertSequence();
-        }
-        // Show browser notification
+        if (soundOn) playOrderAlertSequence();
         const where = o.car_number
           ? `🚗 طلب سيارة #${o.car_number}${o.customer_name ? ` — ${o.customer_name}` : ''}`
           : o.table
@@ -284,12 +287,8 @@ export default function KitchenPage() {
           </h1>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Sound toggle */}
           <button
-            onClick={() => {
-              setSoundOn(!soundOn);
-              if (!soundOn) playChime();
-            }}
+            onClick={() => { setSoundOn(!soundOn); if (!soundOn) playChime(); }}
             className="w-11 h-11 flex items-center justify-center rounded-xl
                        text-muted-foreground hover:text-foreground hover:bg-card
                        transition-all touch-manipulation"
@@ -302,9 +301,7 @@ export default function KitchenPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
             </span>
-            <span className="text-xs text-success font-medium hidden sm:inline">
-              مباشر
-            </span>
+            <span className="text-xs text-success font-medium hidden sm:inline">مباشر</span>
           </div>
           {totalActive > 0 && (
             <div className="bg-primary text-primary-foreground font-bold px-2.5 py-1 rounded-full text-xs sm:text-sm">
@@ -325,96 +322,70 @@ export default function KitchenPage() {
             <ChefHat size={40} className="text-sidebar-foreground/30" />
           </div>
           <div className="text-center">
-            <h2 className="text-xl font-bold text-muted-foreground">
-              لا يوجد طلبات نشطة
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              لا توجد طلبات نشطة الآن
-            </p>
+            <h2 className="text-xl font-bold text-muted-foreground">لا يوجد طلبات نشطة</h2>
+            <p className="text-sm text-muted-foreground mt-1">لا توجد طلبات نشطة الآن</p>
           </div>
         </div>
       ) : (
         <>
-          {/* Mobile: horizontal swipe between status columns, one full-width at a time */}
-          <div className="sm:hidden flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-4
-                          scrollbar-hide">
-            {columns.map((col) => {
-              const colLabel: Record<string, string> = {
-                pending:   '⏳ جديد',
-                preparing: '🔥 يُجهز',
-              };
-              return (
-                <div key={col.status} className="snap-center flex-shrink-0 w-[88vw] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-muted-foreground">
-                      {colLabel[col.status]}
-                    </h3>
-                    {col.orders.length > 0 && (
-                      <span className="text-xs bg-card text-muted-foreground px-2 py-0.5 rounded-full">
-                        {col.orders.length}
-                      </span>
-                    )}
-                  </div>
-                  {col.orders.length === 0 ? (
-                    <div className="border-2 border-dashed border-border rounded-2xl h-20
-                                    flex items-center justify-center">
-                      <span className="text-xs text-sidebar-foreground/30">فارغ</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {col.orders.map((order) => (
-                        <KitchenCard key={order.id} order={order} onAdvance={handleAdvance} onCancel={handleCancel} />
-                      ))}
-                    </div>
+          {/* Mobile: horizontal swipe, one column at a time */}
+          <div className="sm:hidden flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-4 scrollbar-hide">
+            {columns.map((col) => (
+              <div key={col.status} className="snap-center flex-shrink-0 w-[88vw] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-muted-foreground">
+                    {COL_LABEL[col.status]}
+                  </h3>
+                  {col.orders.length > 0 && (
+                    <span className="text-xs bg-card text-muted-foreground px-2 py-0.5 rounded-full">
+                      {col.orders.length}
+                    </span>
                   )}
                 </div>
-              );
-            })}
+                {col.orders.length === 0 ? (
+                  <div className="border-2 border-dashed border-border rounded-2xl h-20
+                                  flex items-center justify-center">
+                    <span className="text-xs text-sidebar-foreground/30">فارغ</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {col.orders.map((order) => (
+                      <KitchenCard key={order.id} order={order} onAdvance={handleAdvance} onCancel={handleCancel} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
-          {/* Tablet/Desktop: standard grid kanban */}
-          <div className="hidden sm:grid grid-cols-2 gap-4 px-4 pb-4">
-            {columns.map((col) => {
-              const colLabel: Record<string, string> = {
-                pending:   '⏳ جديد',
-                preparing: '🔥 يُجهز',
-              };
-              return (
-                <div key={col.status} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-muted-foreground">
-                      {colLabel[col.status]}
-                    </h3>
-                    {col.orders.length > 0 && (
-                      <span className="text-xs bg-card text-muted-foreground
-                                       px-2 py-0.5 rounded-full">
-                        {col.orders.length}
-                      </span>
-                    )}
-                  </div>
-
-                  {col.orders.length === 0 ? (
-                    <div className="border-2 border-dashed border-border rounded-2xl h-20
-                                    flex items-center justify-center">
-                      <span className="text-xs text-sidebar-foreground/30">
-                        فارغ
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {col.orders.map((order) => (
-                        <KitchenCard
-                          key={order.id}
-                          order={order}
-                          onAdvance={handleAdvance}
-                          onCancel={handleCancel}
-                        />
-                      ))}
-                    </div>
+          {/* Tablet/Desktop: 3-column kanban */}
+          <div className="hidden sm:grid grid-cols-3 gap-4 px-4 pb-4">
+            {columns.map((col) => (
+              <div key={col.status} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-muted-foreground">
+                    {COL_LABEL[col.status]}
+                  </h3>
+                  {col.orders.length > 0 && (
+                    <span className="text-xs bg-card text-muted-foreground px-2 py-0.5 rounded-full">
+                      {col.orders.length}
+                    </span>
                   )}
                 </div>
-              );
-            })}
+                {col.orders.length === 0 ? (
+                  <div className="border-2 border-dashed border-border rounded-2xl h-20
+                                  flex items-center justify-center">
+                    <span className="text-xs text-sidebar-foreground/30">فارغ</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {col.orders.map((order) => (
+                      <KitchenCard key={order.id} order={order} onAdvance={handleAdvance} onCancel={handleCancel} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}
