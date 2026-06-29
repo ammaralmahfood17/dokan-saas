@@ -284,6 +284,8 @@ export function ReviewsDashboard({
   const supabase = createClient();
   const [reviews, setReviews] = useState<(Review & { reviewer_name?: string })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase
