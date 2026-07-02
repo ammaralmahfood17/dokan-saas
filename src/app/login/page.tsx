@@ -24,24 +24,24 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-      setLoading(false);
-      return;
-    }
+      if (error || !data?.user) {
+        toast.error('البريد الإلكتروني أو كلمة المرور غير صحيحة');
+        return;
+      }
 
-    toast.success('مرحباً بعودتك!');
+      toast.success('مرحباً بعودتك!');
 
-    // Redirect based on role
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+      const user = data.user;
+
+      // Check if user is a super admin
       const { data: admin } = await supabase
         .from('super_admins')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (admin) {
         router.push('/admin');
@@ -53,7 +53,7 @@ export default function LoginPage() {
         .from('restaurants')
         .select('slug')
         .eq('owner_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (restaurant?.slug) {
         router.push(`/${restaurant.slug}/dashboard`);
@@ -61,8 +61,11 @@ export default function LoginPage() {
         // No restaurant yet — go to onboarding
         router.push('/setup');
       }
-    } else {
-      router.push('/');
+    } catch (err) {
+      console.error('Login error:', err);
+      toast.error('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setLoading(false);
     }
   };
 
